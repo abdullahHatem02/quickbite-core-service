@@ -10,7 +10,7 @@ export function errorHandler(err: AppError, req: Request, res: Response, _next: 
         stack: err.stack,
         operational: operational,
         body: req.body,
-        correlationId: (req as Request & {correlationId?: string}).correlationId
+        correlationId: req.correlationId
     })
 
     if(operational){
