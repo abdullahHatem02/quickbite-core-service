@@ -1,0 +1,13 @@
+Outcome:
+1- Auth system (signup, login, reset password)
+2- Users (/me and /update)
+3- Customer addresses
+
+------------------------------------------------
+1. Create database tables for users, customer_Addresses, password resets
+--
+2. Implement Auth System
+3. Implement User Module
+4. Implement Customer addresses
+5. Test and wire everything
+

@@ -1,5 +1,5 @@
 import {Router} from 'express';
-import {pingDB} from "../../common/knex/knex.js"
+import {pingDB} from "../../common/knex/knex"
 
 export const healthRouter = Router();
 

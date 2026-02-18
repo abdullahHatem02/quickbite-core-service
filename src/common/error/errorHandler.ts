@@ -1,6 +1,6 @@
 import type {Request, Response, NextFunction} from "express";
-import {logger} from "../logger/logger.ts";
-import type {AppError} from "./AppError.ts";
+import {logger} from "../logger/logger";
+import type {AppError} from "./AppError";
 
 export function errorHandler(err: AppError, req: Request, res: Response, _next: NextFunction) {
     const operational = err.isOperational;
@@ -10,7 +10,7 @@ export function errorHandler(err: AppError, req: Request, res: Response, _next: 
         stack: err.stack,
         operational: operational,
         body: req.body,
-        correlationId: (req as Request & {correlationId?: string}).correlationId
+        correlationId: req.correlationId
     })
 
     if(operational){

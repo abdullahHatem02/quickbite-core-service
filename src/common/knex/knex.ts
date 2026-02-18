@@ -1,24 +1,5 @@
+import config from "./knexfile";
 import knex from "knex";
-import {env} from '../config/env.ts'
-import type { Knex } from 'knex';
-
-const config: Knex.Config = {
-    client: "pg",
-    connection: {
-        host: env.db.host,
-        port: env.db.port,
-        user: env.db.username,
-        password: env.db.password,
-        database: env.db.name,
-    },
-    pool: {
-        max: env.db.poolMax
-    },
-    migrations: {
-        directory: "./src/migrations",
-        extension: "ts"
-    }
-}
 
 export const db = knex(config);
 

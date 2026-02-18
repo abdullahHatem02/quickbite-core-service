@@ -1,8 +1,8 @@
 import http from "http"
-import {createApp} from './app.ts'
-import { env } from './common/config/env.ts'
-import {db} from './common/knex/knex.ts'
-import {logger} from "./common/logger/logger.ts";
+import {createApp} from './app'
+import { env } from './common/config/env'
+import {db} from './common/knex/knex'
+import {logger} from "./common/logger/logger";
 
 const app = createApp()
 const server = http.createServer(app);
