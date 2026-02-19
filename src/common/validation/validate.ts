@@ -8,7 +8,8 @@ export async function validateBody <T extends Object>(cls: new () => T, body: un
 
     if(errors.length > 0) {
         const messages = errors.flatMap((e) => Object.values(e.constraints ?? {}));
-        throw new AppError(messages.join(', \n'), 400)
+        throw new AppError(messages.join('\n'), 400)
+
     }
     return instance;
 }

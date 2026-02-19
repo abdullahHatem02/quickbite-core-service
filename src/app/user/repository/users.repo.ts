@@ -25,7 +25,14 @@ export async function findUserByEmail(email: string): Promise<User | undefined> 
         USER_COLUMNS
     ).where("email", email).whereNull("deleted_at").first();
 
-    console.log(row);
+    return row ? toEntity(row) : undefined;
+}
+
+export async function findUserById(id: number): Promise<User | undefined> {
+    const row = await db("users").select(
+        USER_COLUMNS
+    ).where("id", id).whereNull("deleted_at").first();
+
     return row ? toEntity(row) : undefined;
 }
 
@@ -34,6 +41,15 @@ export async function findUserExistsByEmailOrPhone(email: string, phone: string)
     SELECT EXISTS (SELECT 1 FROM users WHERE email = ? OR phone = ?) AS "exists"
     `,
         [email, phone]);
+
+    return result.rows[0].exists;
+}
+
+export async function findUserExistsByEmail(email: string): Promise<Boolean> {
+    const result = await db.raw(`
+    SELECT EXISTS (SELECT 1 FROM users WHERE email = ?) AS "exists"
+    `,
+        [email]);
 
     return result.rows[0].exists;
 }
@@ -50,4 +66,9 @@ export async function createUser(user:Partial<User>): Promise<User> {
     }).returning(USER_COLUMNS);
 
     return toEntity(row);
+}
+
+export async function updateUserPassword(id: number, password: string) {
+    await db("users").where("id", id).
+    update({password_hash: password});
 }
