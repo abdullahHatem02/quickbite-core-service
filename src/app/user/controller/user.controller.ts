@@ -1,5 +1,7 @@
 import {NextFunction, Request, Response} from "express";
 import {UserService, userService} from "../service/user.service";
+import {validateBody} from "../../../common/validation/validate";
+import {UpdateUserDTO} from "../dto/user.dto";
 
 export class UserController {
     constructor(private readonly userService: UserService) {}
@@ -13,7 +15,15 @@ export class UserController {
         }
     }
 
-    // update user
+    updateMe = async(req: Request, res: Response, next: NextFunction) => {
+        try {
+            const data = await validateBody(UpdateUserDTO, req.body);
+            const user = await this.userService.updateProfile(req.user?.userId!, data);
+            res.status(200).json({message: "Profile updated", user});
+        } catch (err) {
+            next(err);
+        }
+    }
 }
 
 export const userController = new UserController(userService)

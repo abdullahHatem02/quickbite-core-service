@@ -12,7 +12,7 @@ import {
     findLatestPasswordResetByUserId,
     updatePasswordResetConsumedAt
 } from "../repository/password-reset.repo";
-import {hashPassword, createAccessToken, createRefreshToken, comparePassword, generateOTP, hashOTP} from "../utils";
+import {hashPassword, createAccessToken, createRefreshToken, comparePassword, generateOTP, hashOTP, verifyRefreshToken} from "../utils";
 
 export class AuthService {
     register = async(data: RegisterDTO )=> {
@@ -141,6 +141,15 @@ export class AuthService {
         await updateUserPassword(user.id, hashedPassword);
         // update reset password
         await updatePasswordResetConsumedAt(reset.id)
+    }
+
+    refresh = async(refreshToken: string) => {
+        if (!refreshToken) {
+            throw IncorrectCredentials;
+        }
+        const payload = verifyRefreshToken(refreshToken);
+        const accessToken = createAccessToken({userId: payload.userId, role: payload.role, email: payload.email});
+        return {accessToken};
     }
 }
 
