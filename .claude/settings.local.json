@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /c/Users/ABDULLAH/Desktop/quickbite/core-service && npm ls reflect-metadata 2>&1)",
+      "Bash(cd:*)"
+    ]
+  }
+}
