@@ -50,6 +50,41 @@ export async function createBranch (data: Partial <Branch>, conn: Knex = db): Pr
     return toEntity(row);
 }
 
+export async function findBranchesByRestaurant(restaurantId: number): Promise<Branch[]> {
+    const rows = await db("restaurant_branches").select(BRANCH_COLUMNS).where("restaurant_id", restaurantId);
+    return rows.map(toEntity);
+}
+
+export async function findBranchById(id: number): Promise<Branch | undefined> {
+    const row = await db("restaurant_branches").select(BRANCH_COLUMNS).where("id", id).first();
+    return row ? toEntity(row) : undefined;
+}
+
+export async function updateBranch(id: number, data: Record<string, any>): Promise<Branch> {
+    const [row] = await db("restaurant_branches").where("id", id).update({
+        label: data.label,
+        address_text: data.addressText,
+        lat: data.lat,
+        lng: data.lng,
+        opens_at: data.opensAt,
+        closes_at: data.closesAt,
+        delivery_radius: data.deliveryRadius,
+        currency: data.currency,
+        accept_orders: data.acceptOrders,
+        updated_at: new Date(),
+    }).returning(BRANCH_COLUMNS);
+    return toEntity(row);
+}
+
+export async function updateBranchStatus(id: number, data: {isActive?: boolean, commission?: number}): Promise<Branch> {
+    const [row] = await db("restaurant_branches").where("id", id).update({
+        is_active: data.isActive,
+        commission: data.commission,
+        updated_at: new Date(),
+    }).returning(BRANCH_COLUMNS);
+    return toEntity(row);
+}
+
 export async function findNearbyBranches(lat: number, lng: number): Promise<Branch[]> {
     const result = await db.raw(`
        SELECT 

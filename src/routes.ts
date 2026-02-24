@@ -17,5 +17,5 @@ routes.use('/auth', authRouter);
 routes.use('/customer/addresses', customerAddressRouter);
 // menu
 // restaurant
-routes.use('/restaurant',restaurantRouter)
+routes.use('/restaurants',restaurantRouter)
 routes.use('/',branchRouter)

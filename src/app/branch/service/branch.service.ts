@@ -1,8 +1,9 @@
 import {UnAuthorisedError} from "../../../common/auth/errors";
+import {AppError} from "../../../common/error/AppError";
 import {findRestaurantById} from "../../restaurant/repository/restaurant.repo";
 import {SystemRole} from "../../user/enums";
-import {CreateBranchDTO} from "../dto/branch.dto";
-import {findNearbyBranches, createBranch} from "../repository/branch.repository";
+import {CreateBranchDTO, UpdateBranchDTO, UpdateBranchStatusDTO} from "../dto/branch.dto";
+import {findNearbyBranches, createBranch, findBranchesByRestaurant, findBranchById, updateBranch, updateBranchStatus} from "../repository/branch.repository";
 
 export class BranchService {
 
@@ -11,10 +12,13 @@ export class BranchService {
         return rows;
     }
 
+    findByRestaurant = async (restaurantId: number) => {
+        return await findBranchesByRestaurant(restaurantId);
+    }
+
     create = async (restaurantId: number, userId: number, userRole: SystemRole, data: CreateBranchDTO) => {
         const restaurant = await findRestaurantById(restaurantId);
 
-        // if the logged in user is nto system admin and not the owner of restaurant then throw unauthorised err
         if(userRole != SystemRole.SYSTEM_ADMIN && (Number(restaurant.ownerId) !== Number(userId)) ){
             throw UnAuthorisedError
         }
@@ -39,6 +43,33 @@ export class BranchService {
         });
 
         return branch;
+    }
+
+    update = async (branchId: number, userId: number, userRole: SystemRole, data: UpdateBranchDTO) => {
+        const branch = await findBranchById(branchId);
+        if (!branch) {
+            throw new AppError("Branch not found", 404);
+        }
+
+        const restaurant = await findRestaurantById(branch.restaurantId);
+        if (userRole !== SystemRole.SYSTEM_ADMIN && Number(restaurant.ownerId) !== Number(userId)) {
+            throw UnAuthorisedError;
+        }
+
+        return await updateBranch(branchId, data);
+    }
+
+    updateStatus = async (branchId: number, userRole: SystemRole, data: UpdateBranchStatusDTO) => {
+        if (userRole !== SystemRole.SYSTEM_ADMIN) {
+            throw UnAuthorisedError;
+        }
+
+        const branch = await findBranchById(branchId);
+        if (!branch) {
+            throw new AppError("Branch not found", 404);
+        }
+
+        return await updateBranchStatus(branchId, data);
     }
 }
 
