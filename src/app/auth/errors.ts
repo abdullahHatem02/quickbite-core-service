@@ -6,3 +6,4 @@ export const CannotSignupAsSystemAdmin = new AppError('You cannot register as a 
 
 export const IncorrectCredentials = new AppError('Incorrect email or password', 401);
 export const InvalidOTPError = new AppError('Invalid OTP', 401);
+export const RestaurantDataRequiredError = new AppError('Restaurant data is required', 400);
