@@ -25,9 +25,9 @@ export async function findAllRestaurants(): Promise<RestaurantEntity[]> {
     return rows.map(toEntity);
 }
 
-export async function findRestaurantById(id: number): Promise<RestaurantEntity> {
+export async function findRestaurantById(id: number): Promise<RestaurantEntity | undefined> {
     const row = await db("restaurants").select(RESTAURANT_COLUMNS).where("id", id).first();
-    return toEntity(row);
+    return row ? toEntity(row) : undefined;
 }
 
 // find restaurant by id

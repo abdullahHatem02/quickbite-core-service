@@ -1,6 +1,7 @@
 import {UnAuthorisedError} from "../../../common/auth/errors";
-import {AppError} from "../../../common/error/AppError";
+import {RestaurantNotFoundError} from "../../restaurant/errors";
 import {findRestaurantById} from "../../restaurant/repository/restaurant.repo";
+import {BranchNotFoundError} from "../errors";
 import {SystemRole} from "../../user/enums";
 import {CreateBranchDTO, UpdateBranchDTO, UpdateBranchStatusDTO} from "../dto/branch.dto";
 import {findNearbyBranches, createBranch, findBranchesByRestaurant, findBranchById, updateBranch, updateBranchStatus} from "../repository/branch.repository";
@@ -18,6 +19,7 @@ export class BranchService {
 
     create = async (restaurantId: number, userId: number, userRole: SystemRole, data: CreateBranchDTO) => {
         const restaurant = await findRestaurantById(restaurantId);
+        if (!restaurant) throw RestaurantNotFoundError;
 
         if(userRole != SystemRole.SYSTEM_ADMIN && (Number(restaurant.ownerId) !== Number(userId)) ){
             throw UnAuthorisedError
@@ -48,10 +50,11 @@ export class BranchService {
     update = async (branchId: number, userId: number, userRole: SystemRole, data: UpdateBranchDTO) => {
         const branch = await findBranchById(branchId);
         if (!branch) {
-            throw new AppError("Branch not found", 404);
+            throw BranchNotFoundError;
         }
 
         const restaurant = await findRestaurantById(branch.restaurantId);
+        if (!restaurant) throw RestaurantNotFoundError;
         if (userRole !== SystemRole.SYSTEM_ADMIN && Number(restaurant.ownerId) !== Number(userId)) {
             throw UnAuthorisedError;
         }
@@ -66,7 +69,7 @@ export class BranchService {
 
         const branch = await findBranchById(branchId);
         if (!branch) {
-            throw new AppError("Branch not found", 404);
+            throw BranchNotFoundError;
         }
 
         return await updateBranchStatus(branchId, data);

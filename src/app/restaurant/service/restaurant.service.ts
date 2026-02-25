@@ -1,7 +1,7 @@
 import {Knex} from "knex";
 import {db} from "../../../common/knex/knex";
-import {AppError} from "../../../common/error/AppError";
 import {UnAuthorisedError} from "../../../common/auth/errors";
+import {RestaurantNotFoundError, OwnerAlreadyExistsError} from "../errors";
 import {hashPassword} from "../../auth/utils";
 import {RegisterRestaurantDTO} from "../../auth/dto/auth.dto";
 import {SystemRole} from "../../user/enums";
@@ -20,7 +20,7 @@ export class RestaurantService {
 
         const existing = await findUserExistsByEmailOrPhone(data.owner.email, data.owner.phone);
         if (existing) {
-            throw new AppError("User with this email or phone already exists", 409);
+            throw OwnerAlreadyExistsError;
         }
 
         const hashedPassword = await hashPassword(data.owner.password);
@@ -92,7 +92,7 @@ export class RestaurantService {
     findById = async(id: number) => {
         const restaurant = await findRestaurantById(id);
         if (!restaurant) {
-            throw new AppError("Restaurant not found", 404);
+            throw RestaurantNotFoundError;
         }
         return restaurant;
     }
@@ -100,7 +100,7 @@ export class RestaurantService {
     update = async(id: number, userId: number, userRole: SystemRole, data: UpdateRestaurantDTO) => {
         const restaurant = await findRestaurantById(id);
         if (!restaurant) {
-            throw new AppError("Restaurant not found", 404);
+            throw RestaurantNotFoundError;
         }
         if (userRole !== SystemRole.SYSTEM_ADMIN && Number(restaurant.ownerId) !== Number(userId)) {
             throw UnAuthorisedError;
@@ -114,7 +114,7 @@ export class RestaurantService {
         }
         const restaurant = await findRestaurantById(id);
         if (!restaurant) {
-            throw new AppError("Restaurant not found", 404);
+            throw RestaurantNotFoundError;
         }
         return await updateRestaurantStatus(id, data.status);
     }
