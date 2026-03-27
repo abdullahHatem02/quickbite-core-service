@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(cd /c/Users/ABDULLAH/Desktop/quickbite/core-service && npm ls reflect-metadata 2>&1)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(PGPASSWORD=xxx psql -h localhost -U postgres -d quickbite_core -c \"SELECT id, email, system_role FROM users WHERE email = 'restaurant58@email.com';\")",
+      "Bash(PGPASSWORD=xxx psql -h localhost -U postgres -d quickbite_core -c \"SELECT id, owner_id, name FROM restaurants WHERE owner_id = \\(SELECT id FROM users WHERE email = 'restaurant58@email.com'\\);\")",
+      "Bash(PGPASSWORD=xxx psql -h localhost -U postgres -d quickbite_core -c \"SELECT id, name FROM roles;\")"
     ]
   }
 }

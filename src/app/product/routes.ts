@@ -9,4 +9,8 @@ productRouter.get('/restaurants/:restaurantId/products', authenticate, productCo
 productRouter.get('/branches/:branchId/products', productController.findByBranch);
 productRouter.get('/products/:id', productController.findById);
 productRouter.post('/restaurants/:restaurantId/products', authenticate, productController.create);
-productRouter.patch('/products/:id', authenticate, productController.update);
+productRouter.patch('/products/:id', authenticate, productController.update); // branch_manager, owner but i wanna deny it for staff
+
+// products update
+// products:update
+// branch_manager , products , update

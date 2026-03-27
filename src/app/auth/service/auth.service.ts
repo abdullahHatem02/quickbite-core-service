@@ -1,4 +1,6 @@
 import {db} from "../../../common/knex/knex";
+import {findBranchIdsByMemberId} from "../../rbac/repository/member-branch.repo";
+import {activateMemberByUserId, findRestaurantMemberWithRole} from "../../rbac/repository/restaurant_member.repo";
 import {RestaurantService, restaurantService} from "../../restaurant/service/restaurant.service";
 import {SystemRole} from "../../user/enums";
 import {
@@ -69,6 +71,7 @@ export class AuthService {
                     throw RestaurantDataRequiredError;
                 }
                 restaurant = await this.restaurantService.create(user.id, data.restaurant, trx)
+                // insert the member and set the member info for jwt payload
             }
 
             await trx.commit();
@@ -110,8 +113,21 @@ export class AuthService {
         if(!match) {
             throw IncorrectCredentials
         }
+
+        let restaurantMemberInfo = null
+        if(user.systemRole == SystemRole.RESTAURANT_USER) {
+            const memberData =  await findRestaurantMemberWithRole(user.id);
+            const branchIds = await findBranchIdsByMemberId(memberData.member.id);
+            if(memberData)  {
+                restaurantMemberInfo = {
+                    restaurantId: memberData.member.restaurantId,
+                    restaurantRole: memberData.roleName,
+                    branchIds
+                }
+            }
+        }
         // generate tokens
-        const payload = {userId: user.id, role: user.systemRole, email: user.email};
+        const payload = {userId: user.id, role: user.systemRole, email: user.email, ...restaurantMemberInfo};
         const accessToken = createAccessToken(payload);
         const refreshToken = createRefreshToken(payload);
         // return the data
@@ -160,16 +176,12 @@ export class AuthService {
         }
         // find reset password
         const reset = await findLatestPasswordResetByUserId(user.id);
-        console.log(reset)
         if(!reset) {
             throw InvalidOTPError
         }
         // verify otp and expiry date
         const inputOTPHash = hashOTP(data.otp)
-        console.log(inputOTPHash);
-        console.log(reset.otpHash);
 
-        console.log(reset.isExpired());
         if(inputOTPHash != reset.otpHash || reset.isExpired() ) {
             throw InvalidOTPError
         }
@@ -178,6 +190,8 @@ export class AuthService {
         await updateUserPassword(user.id, hashedPassword);
         // update reset password
         await updatePasswordResetConsumedAt(reset.id)
+
+        return user;
     }
 
     refresh = async(refreshToken: string) => {
@@ -187,6 +201,12 @@ export class AuthService {
         const payload = verifyRefreshToken(refreshToken);
         const accessToken = createAccessToken({userId: payload.userId, role: payload.role, email: payload.email});
         return {accessToken};
+    }
+
+    acceptInvite = async(data: ResetPasswordDTO )=> {
+        const user = await this.resetPassword(data)
+        // activate member
+        await activateMemberByUserId(user.id)
     }
 }
 
