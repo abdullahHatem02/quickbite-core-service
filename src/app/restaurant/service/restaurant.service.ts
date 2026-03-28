@@ -1,41 +1,33 @@
 import {Knex} from "knex";
 import {db} from "../../../common/knex/knex";
 import {UnAuthorisedError} from "../../../common/auth/errors";
-import {RestaurantNotFoundError, OwnerAlreadyExistsError} from "../errors";
-import {hashPassword} from "../../auth/utils";
+import {RestaurantNotFoundError} from "../errors";
 import {RegisterRestaurantDTO} from "../../auth/dto/auth.dto";
 import {SystemRole} from "../../user/enums";
-import {createUser, findUserExistsByEmailOrPhone} from "../../user/repository/users.repo";
+import {UserService, userService} from "../../user/service/user.service";
 import {RestaurantEntity} from "../entity/restaurant.entity";
 import {CreateRestaurantDTO, UpdateRestaurantDTO, UpdateRestaurantStatusDTO} from "../dto/restaurant.dto";
 import {RestaurantStatus} from "../enums";
 import {createRestaurant, findAllRestaurants, findRestaurantById, updateRestaurant, updateRestaurantStatus} from "../repository/restaurant.repo";
 
 export class RestaurantService {
+    constructor(private readonly userService: UserService) {}
 
     createWithOwner = async (userRole: SystemRole, data: CreateRestaurantDTO) => {
         if (userRole !== SystemRole.SYSTEM_ADMIN) {
             throw UnAuthorisedError;
         }
 
-        const existing = await findUserExistsByEmailOrPhone(data.owner.email, data.owner.phone);
-        if (existing) {
-            throw OwnerAlreadyExistsError;
-        }
-
-        const hashedPassword = await hashPassword(data.owner.password);
         const now = new Date();
         const trx = await db.transaction();
 
         try {
-            const user = await createUser({
+            const user = await this.userService.create({
                 email: data.owner.email,
                 phone: data.owner.phone,
                 name: data.owner.name,
-                passwordHash: hashedPassword,
+                password: data.owner.password,
                 systemRole: SystemRole.RESTAURANT_USER,
-                createdAt: now,
-                updatedAt: now,
             }, trx);
 
             const restaurant = await createRestaurant(new RestaurantEntity({
@@ -48,6 +40,10 @@ export class RestaurantService {
                 updatedAt: now,
                 statusUpdatedAt: now,
             }), trx);
+
+            // lazy-import to avoid circular dependency
+            const {memberService} = require("../../rbac/service/member.service");
+            await memberService.createOwnerMember(restaurant.id, user.id, trx);
 
             await trx.commit();
 
@@ -120,4 +116,4 @@ export class RestaurantService {
     }
 }
 
-export const restaurantService = new RestaurantService();
+export const restaurantService = new RestaurantService(userService);
