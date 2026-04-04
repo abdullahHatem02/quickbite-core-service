@@ -1,4 +1,5 @@
-import {UnAuthorisedError} from "../../../common/auth/errors";
+import {injectable} from "tsyringe";
+import {UnAuthorisedError} from "../../../lib/auth/errors";
 import {RestaurantNotFoundError} from "../../restaurant/errors";
 import {findRestaurantById} from "../../restaurant/repository/restaurant.repo";
 import {BranchNotFoundError} from "../errors";
@@ -6,6 +7,7 @@ import {SystemRole} from "../../user/enums";
 import {CreateBranchDTO, UpdateBranchDTO, UpdateBranchStatusDTO} from "../dto/branch.dto";
 import {findNearbyBranches, createBranch, findBranchesByRestaurant, findBranchById, updateBranch, updateBranchStatus} from "../repository/branch.repository";
 
+@injectable()
 export class BranchService {
 
     findNearby = async (lat:number, lng:number) => {
@@ -75,5 +77,3 @@ export class BranchService {
         return await updateBranchStatus(branchId, data);
     }
 }
-
-export const branchService = new BranchService();

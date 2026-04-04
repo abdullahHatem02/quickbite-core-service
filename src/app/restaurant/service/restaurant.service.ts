@@ -1,17 +1,22 @@
 import {Knex} from "knex";
-import {db} from "../../../common/knex/knex";
-import {UnAuthorisedError} from "../../../common/auth/errors";
+import {injectable, inject} from "tsyringe";
+import {TOKENS} from "../../../lib/di/tokens";
+import {PaginationParams, FilterParams, buildPaginationResult} from "../../../lib/http/pagination/cursor-pagination";
+import {db} from "../../../lib/knex/knex";
+import {UnAuthorisedError} from "../../../lib/auth/errors";
 import {RestaurantNotFoundError} from "../errors";
 import {RegisterRestaurantDTO} from "../../auth/dto/auth.dto";
 import {SystemRole} from "../../user/enums";
-import {UserService, userService} from "../../user/service/user.service";
+import {UserService} from "../../user/service/user.service";
 import {RestaurantEntity} from "../entity/restaurant.entity";
 import {CreateRestaurantDTO, UpdateRestaurantDTO, UpdateRestaurantStatusDTO} from "../dto/restaurant.dto";
 import {RestaurantStatus} from "../enums";
 import {createRestaurant, findAllRestaurants, findRestaurantById, updateRestaurant, updateRestaurantStatus} from "../repository/restaurant.repo";
 
+
+@injectable()
 export class RestaurantService {
-    constructor(private readonly userService: UserService) {}
+    constructor(@inject(TOKENS.UserService) private readonly userService: UserService) {}
 
     createWithOwner = async (userRole: SystemRole, data: CreateRestaurantDTO) => {
         if (userRole !== SystemRole.SYSTEM_ADMIN) {
@@ -41,9 +46,11 @@ export class RestaurantService {
                 statusUpdatedAt: now,
             }), trx);
 
-            // lazy-import to avoid circular dependency
-            const {memberService} = require("../../rbac/service/member.service");
-            await memberService.createOwnerMember(restaurant.id, user.id, trx);
+            // resolve from container to avoid circular dependency
+            const {container: c} = require("../../../lib/di/container");
+            const {TOKENS: T} = require("../../../lib/di/tokens");
+            const memberSvc = c.resolve(T.MemberService);
+            await memberSvc.createOwnerMember(restaurant.id, user.id, trx);
 
             await trx.commit();
 
@@ -80,9 +87,9 @@ export class RestaurantService {
         return result;
     }
 
-    findAll = async() => {
-        const result = await findAllRestaurants();
-        return result;
+    findAll = async(params: PaginationParams, filters: FilterParams[]) => {
+        const result = await findAllRestaurants(params, filters);
+        return buildPaginationResult(result, params.limit, params.sortBy);
     }
 
     findById = async(id: number) => {
@@ -115,5 +122,3 @@ export class RestaurantService {
         return await updateRestaurantStatus(id, data.status);
     }
 }
-
-export const restaurantService = new RestaurantService(userService);

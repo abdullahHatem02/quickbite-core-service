@@ -1,10 +1,12 @@
-import {db} from "../../../common/knex/knex";
+import {injectable, inject} from "tsyringe";
+import {TOKENS} from "../../../lib/di/tokens";
+import {db} from "../../../lib/knex/knex";
 import {findBranchIdsByMemberId} from "../../rbac/repository/member-branch.repo";
 import {activateMemberByUserId, findRestaurantMemberWithRole} from "../../rbac/repository/restaurant_member.repo";
-import {MemberService, memberService} from "../../rbac/service/member.service";
-import {RestaurantService, restaurantService} from "../../restaurant/service/restaurant.service";
+import {MemberService} from "../../rbac/service/member.service";
+import {RestaurantService} from "../../restaurant/service/restaurant.service";
 import {SystemRole} from "../../user/enums";
-import {UserService, userService} from "../../user/service/user.service";
+import {UserService} from "../../user/service/user.service";
 import {findUserByEmail, updateUserPassword} from "../../user/repository/users.repo";
 import {RegisterDTO, LoginDTO, ForgetPasswordDTO, ResetPasswordDTO} from "../dto/auth.dto";
 import {
@@ -28,11 +30,13 @@ import {
     verifyRefreshToken
 } from "../utils";
 
+
+@injectable()
 export class AuthService {
     constructor(
-        private readonly restaurantService: RestaurantService,
-        private readonly userService: UserService,
-        private readonly memberService: MemberService,
+        @inject(TOKENS.RestaurantService) private readonly restaurantService: RestaurantService,
+        @inject(TOKENS.UserService) private readonly userService: UserService,
+        @inject(TOKENS.MemberService) private readonly memberService: MemberService,
     ) {}
 
     register = async(data: RegisterDTO )=> {
@@ -187,5 +191,3 @@ export class AuthService {
         await activateMemberByUserId(user.id)
     }
 }
-
-export const authService = new AuthService(restaurantService, userService, memberService);

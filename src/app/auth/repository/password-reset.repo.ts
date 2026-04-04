@@ -1,6 +1,6 @@
 import {Knex} from "knex";
 import {PasswordReset} from "../entity/password-reset.entity";
-import {db} from "../../../common/knex/knex";
+import {db} from "../../../lib/knex/knex";
 
 const PASSWORD_RESET_COLUMNS = ['id','user_id','otp_hash','expires_at','consumed_at','created_at'];
 

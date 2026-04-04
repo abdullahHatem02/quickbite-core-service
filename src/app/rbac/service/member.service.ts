@@ -1,33 +1,34 @@
 import {Knex} from "knex";
-import {AppError} from "../../../common/error/AppError";
-import {db} from "../../../common/knex/knex";
-import {toMs} from "../../../common/utils/time";
+import {injectable, inject} from "tsyringe";
+import {TOKENS} from "../../../lib/di/tokens";
+import {AppError} from "../../../lib/error/AppError";
+import {db} from "../../../lib/knex/knex";
+import {toMs} from "../../../pkg/utils/time";
 import {createPasswordReset} from "../../auth/repository/password-reset.repo";
 import {generateOTP, hashOTP} from "../../auth/utils";
 import {SystemRole} from "../../user/enums";
-import {UserService, userService} from "../../user/service/user.service";
+import {UserService} from "../../user/service/user.service";
 import {CreateMemberDTO, UpdateMemberDTO, UpdateMemberBranchesDTO} from "../dto/member.dto";
 import {MemberBranch} from "../entity/member-branch.entity";
 import {RestaurantMember} from "../entity/restaurant-member.entity";
 import {MemberStatus} from "../enums";
-import {CannotCreateOwnerUserError, RoleNotFoundError, MemberNotFoundError, CannotDeleteOwnerError} from "../errors";
+import {
+    CannotCreateOwnerUserError,
+    RoleNotFoundError,
+    MemberNotFoundError,
+    CannotDeleteOwnerError,
+    InvalidBranchIdsError
+} from "../errors";
 import {setMemberBranches, countBranchesByIdsAndRestaurant} from "../repository/member-branch.repo";
 import {createRestaurantMember, findMembersByRestaurantId, findMemberWithRoleName, updateMember, deleteMember} from "../repository/restaurant_member.repo";
 import {findRoleByName} from "../repository/role.repo";
 import {getPermissionsDetailsByRoleName} from "../repository/permission.repo";
 
-const InvalidBranchIdsError = new AppError('One or more branch IDs do not belong to this restaurant', 400);
 
-async function validateBranchOwnership(branchIds: number[], restaurantId: number) {
-    if (branchIds.length === 0) return;
-    const count = await countBranchesByIdsAndRestaurant(branchIds, restaurantId);
-    if (count !== branchIds.length) {
-        throw InvalidBranchIdsError;
-    }
-}
 
+@injectable()
 export class MemberService{
-    constructor(private readonly userService: UserService) {}
+    constructor(@inject(TOKENS.UserService) private readonly userService: UserService) {}
 
     async createOwnerMember(restaurantId: number, userId: number, trx?: Knex.Transaction): Promise<RestaurantMember> {
         const ownerRoleId = await findRoleByName('owner', trx);
@@ -57,7 +58,7 @@ export class MemberService{
 
         // validate branchIds belong to this restaurant
         const branchIds = data.branchIds || [];
-        await validateBranchOwnership(branchIds, restaurantId);
+        await this.validateBranchOwnership(branchIds, restaurantId);
 
         // create user, member, assign branches
         const trx = await db.transaction();
@@ -174,7 +175,7 @@ export class MemberService{
         }
 
         // validate branchIds belong to this restaurant (single COUNT query)
-        await validateBranchOwnership(data.branchIds, restaurantId);
+        await this.validateBranchOwnership(data.branchIds, restaurantId);
 
         const now = new Date();
         const rows = data.branchIds.map(branchId => new MemberBranch({
@@ -194,6 +195,12 @@ export class MemberService{
         const permissions = await getPermissionsDetailsByRoleName(roleName);
         return {role: roleName, permissions};
     }
-}
 
-export const memberService = new MemberService(userService);
+    async validateBranchOwnership(branchIds: number[], restaurantId: number) {
+        if (branchIds.length === 0) return;
+        const count = await countBranchesByIdsAndRestaurant(branchIds, restaurantId);
+        if (count !== branchIds.length) {
+            throw InvalidBranchIdsError;
+        }
+    }
+}

@@ -1,15 +1,19 @@
 import {NextFunction, Request, Response} from "express";
-import {CustomerAddressService, customerAddressService} from "../service/customer-address.service";
-import {validateBody} from "../../../common/validation/validate";
+import {injectable, inject} from "tsyringe";
+import {TOKENS} from "../../../lib/di/tokens";
+import {sendSuccess} from "../../../lib/http/response";
+import {CustomerAddressService} from "../service/customer-address.service";
+import {validateBody} from "../../../lib/validation/validate";
 import {CreateAddressDTO, UpdateAddressDTO} from "../dto/customer-address.dto";
 
+@injectable()
 export class CustomerAddressController {
-    constructor(private readonly customerAddressService: CustomerAddressService) {}
+    constructor(@inject(TOKENS.CustomerAddressService) private readonly customerAddressService: CustomerAddressService) {}
 
     getAll = async (req: Request, res: Response, next: NextFunction) => {
         try {
             const addresses = await this.customerAddressService.getByUserId(req.user?.userId!);
-            res.status(200).json({data: addresses});
+            sendSuccess(res, addresses);
         } catch (err) {
             next(err);
         }
@@ -19,7 +23,7 @@ export class CustomerAddressController {
         try {
             const data = await validateBody(CreateAddressDTO, req.body);
             const address = await this.customerAddressService.create(req.user?.userId!, data);
-            res.status(201).json({message: "Address added", address});
+            sendSuccess(res, {message: "Address added", address}, 201);
         } catch (err) {
             next(err);
         }
@@ -30,7 +34,7 @@ export class CustomerAddressController {
             const addressId = Number(req.params.addressId);
             const data = await validateBody(UpdateAddressDTO, req.body);
             const address = await this.customerAddressService.update(req.user?.userId!, addressId, data);
-            res.status(200).json({message: "Address updated", address});
+            sendSuccess(res, {message: "Address updated", address});
         } catch (err) {
             next(err);
         }
@@ -40,11 +44,9 @@ export class CustomerAddressController {
         try {
             const addressId = Number(req.params.addressId);
             await this.customerAddressService.remove(req.user?.userId!, addressId);
-            res.status(200).json({message: "Address deleted"});
+            sendSuccess(res, {message: "Address deleted"});
         } catch (err) {
             next(err);
         }
     }
 }
-
-export const customerAddressController = new CustomerAddressController(customerAddressService);

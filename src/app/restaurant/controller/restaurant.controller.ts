@@ -1,17 +1,22 @@
 import {NextFunction, Request, Response} from "express";
-import {validateBody} from "../../../common/validation/validate";
+import {injectable, inject} from "tsyringe";
+import {TOKENS} from "../../../lib/di/tokens";
+import {parsePaginationQuery, parseFilters} from "../../../lib/http/pagination/parse-query";
+import {sendSuccess, sendPaginated} from "../../../lib/http/response";
+import {validateBody} from "../../../lib/validation/validate";
 import {SystemRole} from "../../user/enums";
 import {CreateRestaurantDTO, UpdateRestaurantDTO, UpdateRestaurantStatusDTO} from "../dto/restaurant.dto";
-import {RestaurantService, restaurantService} from "../service/restaurant.service";
+import {RestaurantService} from "../service/restaurant.service";
 
+@injectable()
 export class RestaurantController {
-    constructor(private readonly restaurantService: RestaurantService) {}
+    constructor(@inject(TOKENS.RestaurantService) private readonly restaurantService: RestaurantService) {}
 
     create = async(req: Request, res: Response, next: NextFunction) => {
         try {
             const data = await validateBody(CreateRestaurantDTO, req.body);
             const result = await this.restaurantService.createWithOwner(req.user?.role! as SystemRole, data);
-            res.status(201).json({message: "Restaurant created", ...result});
+            sendSuccess(res, result, 201);
         } catch (err) {
             next(err);
         }
@@ -19,8 +24,10 @@ export class RestaurantController {
 
     getAll = async(req: Request, res: Response, next: NextFunction) => {
         try {
-            const result = await this.restaurantService.findAll();
-            res.status(200).json({data: result});
+            const params = parsePaginationQuery(req.query);
+            const filters = parseFilters(req.query,['id','status','name']);
+            const result = await this.restaurantService.findAll(params, filters);
+            sendPaginated(res, result.data, result.meta);
         } catch (err) {
             next(err);
         }
@@ -29,7 +36,7 @@ export class RestaurantController {
     getById = async(req: Request, res: Response, next: NextFunction) => {
         try {
             const result = await this.restaurantService.findById(Number(req.params.id));
-            res.status(200).json(result);
+            sendSuccess(res, result);
         } catch (err) {
             next(err);
         }
@@ -39,7 +46,7 @@ export class RestaurantController {
         try {
             const data = await validateBody(UpdateRestaurantDTO, req.body);
             const result = await this.restaurantService.update(Number(req.params.id), req.user?.userId!, req.user?.role! as SystemRole, data);
-            res.status(200).json({message: "Restaurant updated", restaurant: result});
+            sendSuccess(res, {message: "Restaurant updated", restaurant: result});
         } catch (err) {
             next(err);
         }
@@ -49,11 +56,9 @@ export class RestaurantController {
         try {
             const data = await validateBody(UpdateRestaurantStatusDTO, req.body);
             const result = await this.restaurantService.updateStatus(Number(req.params.id), req.user?.role! as SystemRole, data);
-            res.status(200).json({message: "Status updated", restaurant: {id: result.id, status: result.status}});
+            sendSuccess(res, {message: "Status updated", restaurant: {id: result.id, status: result.status}});
         } catch (err) {
             next(err);
         }
     }
 }
-
-export const restaurantController = new RestaurantController(restaurantService)

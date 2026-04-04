@@ -1,4 +1,5 @@
-import {UnAuthorisedError} from "../../../common/auth/errors";
+import {injectable} from "tsyringe";
+import {UnAuthorisedError} from "../../../lib/auth/errors";
 import {RestaurantNotFoundError} from "../../restaurant/errors";
 import {findRestaurantById} from "../../restaurant/repository/restaurant.repo";
 import {ProductNotFoundError} from "../errors";
@@ -8,6 +9,7 @@ import {createProduct, findProductById, findProductsByBranch, findProductsByRest
 import {findCategoryByName, findCategoriesByRestaurant, createCategory} from "../repository/category.repository";
 import {updateBranchDetails} from "../repository/product-branch-details.repository";
 
+@injectable()
 export class ProductService {
 
     create = async (restaurantId: number, userId: number, userRole: SystemRole, data: CreateProductDTO) => {
@@ -100,5 +102,3 @@ export class ProductService {
         return {product: updatedProduct, branchDetails};
     }
 }
-
-export const productService = new ProductService();

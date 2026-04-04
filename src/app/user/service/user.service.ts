@@ -1,4 +1,5 @@
 import {Knex} from "knex";
+import {injectable} from "tsyringe";
 import {SystemRole} from "../enums";
 import {UserNotFoundError} from "../errors";
 import {UserAlreadyExistsError} from "../../auth/errors";
@@ -15,8 +16,9 @@ export interface CreateUserData {
     systemRole: SystemRole;
 }
 
-export class UserService {
 
+@injectable()
+export class UserService {
     create = async (data: CreateUserData, trx?: Knex | Knex.Transaction): Promise<User> => {
         const existing = await findUserExistsByEmailOrPhone(data.email, data.phone);
         if (existing) {
@@ -64,4 +66,3 @@ export class UserService {
         };
     }
 }
-export const userService = new UserService();

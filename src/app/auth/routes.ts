@@ -1,7 +1,11 @@
 import {Router} from "express";
-import {authController} from "./controller/auth.controller";
+import {TOKENS} from "../../lib/di/tokens";
+import {container} from "../../lib/di/container";
+import {AuthController} from "./controller/auth.controller";
 
 export const authRouter = Router();
+
+const authController = container.resolve<AuthController>(TOKENS.AuthController);
 
 authRouter.post('/register', authController.register);
 authRouter.post('/login', authController.login);

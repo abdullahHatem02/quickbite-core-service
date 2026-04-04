@@ -1,3 +1,4 @@
+import {injectable} from "tsyringe";
 import {AddressNotFoundError} from "../errors";
 import {
     findAddressesByUserId,
@@ -25,6 +26,7 @@ function toResponse(address: any) {
     };
 }
 
+@injectable()
 export class CustomerAddressService {
 
     getByUserId = async (userId: number) => {
@@ -60,5 +62,3 @@ export class CustomerAddressService {
         await deleteAddress(addressId);
     }
 }
-
-export const customerAddressService = new CustomerAddressService();

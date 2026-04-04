@@ -1,9 +1,13 @@
 import {Router} from "express";
-import {authenticate} from "../../common/auth/guard";
-import {rbac, requireRestaurantMember, requireBranchAccess} from "../../common/auth/rbac";
-import {productController} from "./controller/product.controller";
+import {authenticate} from "../../lib/auth/guard";
+import {rbac, requireRestaurantMember, requireBranchAccess} from "../../lib/auth/rbac";
+import {TOKENS} from "../../lib/di/tokens";
+import {container} from "../../lib/di/container";
+import {ProductController} from "./controller/product.controller";
 
 export const productRouter = Router();
+
+const productController = container.resolve<ProductController>(TOKENS.ProductController);
 
 productRouter.get('/restaurants/:restaurantId/categories', productController.findCategories);
 productRouter.get('/branches/:branchId/products', productController.findByBranch);

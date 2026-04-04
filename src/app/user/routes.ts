@@ -1,8 +1,12 @@
 import {Router} from "express";
-import {authenticate} from "../../common/auth/guard";
-import {userController} from "./controller/user.controller";
+import {authenticate} from "../../lib/auth/guard";
+import {TOKENS} from "../../lib/di/tokens";
+import {container} from "../../lib/di/container";
+import {UserController} from "./controller/user.controller";
 
 export const userRouter = Router();
+
+const userController = container.resolve<UserController>(TOKENS.UserController);
 
 // protect
 userRouter.get('/me', authenticate, userController.getMe);
