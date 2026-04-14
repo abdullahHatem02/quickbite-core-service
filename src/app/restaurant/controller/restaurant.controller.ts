@@ -24,7 +24,7 @@ export class RestaurantController {
 
     getAll = async(req: Request, res: Response, next: NextFunction) => {
         try {
-            const params = parsePaginationQuery(req.query);
+            const params = parsePaginationQuery(req.query, ['createdAt', 'name', 'status']);
             const filters = parseFilters(req.query,['id','status','name']);
             const result = await this.restaurantService.findAll(params, filters);
             sendPaginated(res, result.data, result.meta);

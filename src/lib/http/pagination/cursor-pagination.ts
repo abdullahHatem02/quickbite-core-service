@@ -19,6 +19,10 @@ export interface PaginationMeta {
     count: number;
 }
 
+function camelToSnake(str: string): string {
+    return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+}
+
 // createdAt: 2025-10-10 desc 10
 // select * from xxxx where xxx = yyy
 // createdAt  < 2025-10-10 order by created_at desc limit 10
@@ -27,12 +31,12 @@ export function applyCursorPagination<T>( query: Knex.QueryBuilder, params: Pagi
     if(!params.sortBy) {
         return query;
     }
+    const dbColumn = camelToSnake(params.sortBy);
     if(params.cursor) {
         const op = params.sortOrder === 'asc' ? '>' : '<'
-        query = query.where(params.sortBy, op,params.cursor)
+        query = query.where(dbColumn, op, params.cursor)
     }
-    console.log(params)
-    return query.orderBy(params.sortBy, params.sortOrder).limit(params.limit + 1);
+    return query.orderBy(dbColumn, params.sortOrder).limit(params.limit + 1);
 }
 
 export function applyFilters<T>( query: Knex.QueryBuilder, filters: FilterParams[] ): Knex.QueryBuilder {
@@ -57,7 +61,6 @@ export function buildPaginationResult<T>(rows: T[], limit: number, sortBy: strin
 
     if(data.length > 0) {
           const lastItem = data[data.length - 1] as any;
-          console.log(lastItem)
           nextCursor = hasMore && lastItem ? String(lastItem[sortBy]): null;
     }
     return {

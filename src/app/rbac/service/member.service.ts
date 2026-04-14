@@ -1,6 +1,7 @@
 import {Knex} from "knex";
 import {injectable, inject} from "tsyringe";
 import {TOKENS} from "../../../lib/di/tokens";
+import {IEmailProvider} from "../../../pkg/email/email.interface";
 import {AppError} from "../../../lib/error/AppError";
 import {db} from "../../../lib/knex/knex";
 import {toMs} from "../../../pkg/utils/time";
@@ -9,6 +10,7 @@ import {generateOTP, hashOTP} from "../../auth/utils";
 import {SystemRole} from "../../user/enums";
 import {UserService} from "../../user/service/user.service";
 import {CreateMemberDTO, UpdateMemberDTO, UpdateMemberBranchesDTO} from "../dto/member.dto";
+import {memberInvitationEmail} from "../templates/member-invitation";
 import {MemberBranch} from "../entity/member-branch.entity";
 import {RestaurantMember} from "../entity/restaurant-member.entity";
 import {MemberStatus} from "../enums";
@@ -28,7 +30,10 @@ import {getPermissionsDetailsByRoleName} from "../repository/permission.repo";
 
 @injectable()
 export class MemberService{
-    constructor(@inject(TOKENS.UserService) private readonly userService: UserService) {}
+    constructor(
+        @inject(TOKENS.UserService) private readonly userService: UserService,
+        @inject(TOKENS.EmailProvider) private readonly emailProvider: IEmailProvider,
+    ) {}
 
     async createOwnerMember(restaurantId: number, userId: number, trx?: Knex.Transaction): Promise<RestaurantMember> {
         const ownerRoleId = await findRoleByName('owner', trx);
@@ -100,8 +105,8 @@ export class MemberService{
                     createdAt: new Date(),
                 }, trx
             )
-            // TODO: send email
-            console.log(`mocked email sent ${otp}`)
+            const email = memberInvitationEmail(otp, data.role);
+            await this.emailProvider.send(data.email, email.subject, email.html);
 
             await trx.commit()
 

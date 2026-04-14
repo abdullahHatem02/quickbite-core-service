@@ -1,5 +1,6 @@
 import {injectable, inject} from "tsyringe";
 import {TOKENS} from "../../../lib/di/tokens";
+import {IEmailProvider} from "../../../pkg/email/email.interface";
 import {db} from "../../../lib/knex/knex";
 import {findBranchIdsByMemberId} from "../../rbac/repository/member-branch.repo";
 import {activateMemberByUserId, findRestaurantMemberWithRole} from "../../rbac/repository/restaurant_member.repo";
@@ -9,6 +10,7 @@ import {SystemRole} from "../../user/enums";
 import {UserService} from "../../user/service/user.service";
 import {findUserByEmail, updateUserPassword} from "../../user/repository/users.repo";
 import {RegisterDTO, LoginDTO, ForgetPasswordDTO, ResetPasswordDTO} from "../dto/auth.dto";
+import {passwordResetEmail} from "../templates/password-reset";
 import {
     CannotSignupAsSystemAdmin,
     IncorrectCredentials,
@@ -37,6 +39,7 @@ export class AuthService {
         @inject(TOKENS.RestaurantService) private readonly restaurantService: RestaurantService,
         @inject(TOKENS.UserService) private readonly userService: UserService,
         @inject(TOKENS.MemberService) private readonly memberService: MemberService,
+        @inject(TOKENS.EmailProvider) private readonly emailProvider: IEmailProvider,
     ) {}
 
     register = async(data: RegisterDTO )=> {
@@ -151,8 +154,8 @@ export class AuthService {
                 createdAt: new Date(),
             }
         )
-        // TODO: send email
-        console.log(`mocked email sent ${otp}`)
+        const email = passwordResetEmail(otp);
+        await this.emailProvider.send(data.email, email.subject, email.html);
     }
 
     resetPassword =  async(data: ResetPasswordDTO ) => {

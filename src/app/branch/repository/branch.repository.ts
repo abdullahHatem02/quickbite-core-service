@@ -85,9 +85,9 @@ export async function updateBranchStatus(id: number, data: {isActive?: boolean, 
     return toEntity(row);
 }
 
-export async function findNearbyBranches(lat: number, lng: number): Promise<Branch[]> {
+export async function findNearbyBranches(lat: number, lng: number) {
     const result = await db.raw(`
-       SELECT 
+       SELECT
        b.id,
        b.restaurant_id,
        b.address_text,
@@ -97,12 +97,24 @@ export async function findNearbyBranches(lat: number, lng: number): Promise<Bran
        b.is_active,
        b.accept_orders,
        b.currency,
-       r.name,
+       r.name AS restaurant_name,
        r.logo_url
        FROM restaurant_branches b JOIN restaurants r ON  b.restaurant_id = r.id
        WHERE b.is_active = true AND r.status ='active'
        AND ST_DWithin(b.location, ST_MakePoint(?, ?)::geography, b.delivery_radius*1000)
     `,[lng, lat]);
 
-    return result.rows;
+    return result.rows.map((row: any) => ({
+        id: row.id,
+        restaurantId: row.restaurant_id,
+        addressText: row.address_text,
+        label: row.label,
+        lat: row.lat,
+        lng: row.lng,
+        isActive: row.is_active,
+        acceptOrders: row.accept_orders,
+        currency: row.currency,
+        restaurantName: row.restaurant_name,
+        logoUrl: row.logo_url,
+    }));
 }
